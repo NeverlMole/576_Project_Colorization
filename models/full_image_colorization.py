@@ -7,130 +7,123 @@ import torch.nn as nn
 class FullImageColorization(nn.Module):
     def __init__(self):
         super(FullImageColorization, self).__init__()
-        use_bias = True
-        norm_layer = nn.BatchNorm2d
-
-
-        # Conv2
-        model2 = [nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1, bias=use_bias), ]
-        model2 += [nn.ReLU(True), ]
-        model2 += [nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1, bias=use_bias), ]
-        model2 += [nn.ReLU(True), ]
-        model2 += [norm_layer(128), ]
-        # add a subsampling layer operation
-
-        # Conv3
-        model3 = [nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1, bias=use_bias), ]
-        model3 += [nn.ReLU(True), ]
-        model3 += [nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1, bias=use_bias), ]
-        model3 += [nn.ReLU(True), ]
-        model3 += [nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1, bias=use_bias), ]
-        model3 += [nn.ReLU(True), ]
-        model3 += [norm_layer(256), ]
-        # add a subsampling layer operation
-
-        # Conv4
-        model4 = [nn.Conv2d(256, 512, kernel_size=3, stride=1, padding=1, bias=use_bias), ]
-        model4 += [nn.ReLU(True), ]
-        model4 += [nn.Conv2d(512, 512, kernel_size=3, stride=1, padding=1, bias=use_bias), ]
-        model4 += [nn.ReLU(True), ]
-        model4 += [nn.Conv2d(512, 512, kernel_size=3, stride=1, padding=1, bias=use_bias), ]
-        model4 += [nn.ReLU(True), ]
-        model4 += [norm_layer(512), ]
-
-        # Conv5
-        model5 = [nn.Conv2d(512, 512, kernel_size=3, dilation=2, stride=1, padding=2, bias=use_bias), ]
-        model5 += [nn.ReLU(True), ]
-        model5 += [nn.Conv2d(512, 512, kernel_size=3, dilation=2, stride=1, padding=2, bias=use_bias), ]
-        model5 += [nn.ReLU(True), ]
-        model5 += [nn.Conv2d(512, 512, kernel_size=3, dilation=2, stride=1, padding=2, bias=use_bias), ]
-        model5 += [nn.ReLU(True), ]
-        model5 += [norm_layer(512), ]
-
-        # Conv6
-        model6 = [nn.Conv2d(512, 512, kernel_size=3, dilation=2, stride=1, padding=2, bias=use_bias), ]
-        model6 += [nn.ReLU(True), ]
-        model6 += [nn.Conv2d(512, 512, kernel_size=3, dilation=2, stride=1, padding=2, bias=use_bias), ]
-        model6 += [nn.ReLU(True), ]
-        model6 += [nn.Conv2d(512, 512, kernel_size=3, dilation=2, stride=1, padding=2, bias=use_bias), ]
-        model6 += [nn.ReLU(True), ]
-        model6 += [norm_layer(512), ]
-
-        # Conv7
-        model7 = [nn.Conv2d(512, 512, kernel_size=3, stride=1, padding=1, bias=use_bias), ]
-        model7 += [nn.ReLU(True), ]
-        model7 += [nn.Conv2d(512, 512, kernel_size=3, stride=1, padding=1, bias=use_bias), ]
-        model7 += [nn.ReLU(True), ]
-        model7 += [nn.Conv2d(512, 512, kernel_size=3, stride=1, padding=1, bias=use_bias), ]
-        model7 += [nn.ReLU(True), ]
-        model7 += [norm_layer(512), ]
-
-        # Conv7
-        model8up = [nn.ConvTranspose2d(512, 256, kernel_size=4, stride=2, padding=1, bias=use_bias)]
-        model3short8 = [nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1, bias=use_bias), ]
-
-        model8 = [nn.ReLU(True), ]
-        model8 += [nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1, bias=use_bias), ]
-        model8 += [nn.ReLU(True), ]
-        model8 += [nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1, bias=use_bias), ]
-        model8 += [nn.ReLU(True), ]
-        model8 += [norm_layer(256), ]
-
-        # Conv9
-        model9up = [nn.ConvTranspose2d(256, 128, kernel_size=4, stride=2, padding=1, bias=use_bias), ]
-        model2short9 = [nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1, bias=use_bias), ]
-        # add the two feature maps above
-
-        model9 = [nn.ReLU(True), ]
-        model9 += [nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1, bias=use_bias), ]
-        model9 += [nn.ReLU(True), ]
-        model9 += [norm_layer(128), ]
-
-        # Conv10
-        model10up = [nn.ConvTranspose2d(128, 128, kernel_size=4, stride=2, padding=1, bias=use_bias), ]
-        model1short10 = [nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1, bias=use_bias), ]
-        # add the two feature maps above
-
-        model10 = [nn.ReLU(True), ]
-        model10 += [nn.Conv2d(128, 128, kernel_size=3, dilation=1, stride=1, padding=1, bias=use_bias), ]
-        model10 += [nn.LeakyReLU(negative_slope=.2), ]
-
-        # classification output
-        model_class = [nn.Conv2d(256, 529, kernel_size=1, padding=0, dilation=1, stride=1, bias=use_bias), ]
-
-        # regression output
-        model_out = [nn.Conv2d(128, 2, kernel_size=1, padding=0, dilation=1, stride=1, bias=use_bias), ]
-        model_out += [nn.Tanh()]
 
         self.model1 = nn.Sequential(
-            nn.Conv2d(4, 64, kernel_size=3, stride=1, padding=1, bias=use_bias),
+            nn.Conv2d(4, 64, kernel_size=3, padding=1),
             nn.ReLU(True),
-            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1, bias=use_bias),
+            nn.Conv2d(64, 64, kernel_size=3, padding=1),
             nn.ReLU(True),
-            norm_layer(64)
+            nn.BatchNorm2d(64)
         )
 
-        self.model2 = nn.Sequential(*model2)
-        self.model3 = nn.Sequential(*model3)
-        self.model4 = nn.Sequential(*model4)
-        self.model5 = nn.Sequential(*model5)
-        self.model6 = nn.Sequential(*model6)
-        self.model7 = nn.Sequential(*model7)
-        self.model8up = nn.Sequential(*model8up)
-        self.model8 = nn.Sequential(*model8)
-        self.model9up = nn.Sequential(*model9up)
-        self.model9 = nn.Sequential(*model9)
-        self.model10up = nn.Sequential(*model10up)
-        self.model10 = nn.Sequential(*model10)
-        self.model3short8 = nn.Sequential(*model3short8)
-        self.model2short9 = nn.Sequential(*model2short9)
-        self.model1short10 = nn.Sequential(*model1short10)
+        self.model2 = nn.Sequential(
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
+            nn.ReLU(True),
+            nn.Conv2d(128, 128, kernel_size=3, padding=1),
+            nn.ReLU(True),
+            nn.BatchNorm2d(128)
+        )
 
-        self.model_class = nn.Sequential(*model_class)
-        self.model_out = nn.Sequential(*model_out)
+        self.model3 = nn.Sequential(
+            nn.Conv2d(128, 256, kernel_size=3, padding=1),
+            nn.ReLU(True),
+            nn.Conv2d(256, 256, kernel_size=3, padding=1),
+            nn.ReLU(True),
+            nn.Conv2d(256, 256, kernel_size=3, padding=1),
+            nn.ReLU(True),
+            nn.BatchNorm2d(256)
+        )
 
-        self.upsample4 = nn.Sequential(*[nn.Upsample(scale_factor=4, mode='nearest'), ])
-        self.softmax = nn.Sequential(*[nn.Softmax(dim=1), ])
+        self.model4 = nn.Sequential(
+            nn.Conv2d(256, 512, kernel_size=3, padding=1),
+            nn.ReLU(True),
+            nn.Conv2d(512, 512, kernel_size=3, padding=1),
+            nn.ReLU(True),
+            nn.Conv2d(512, 512, kernel_size=3, padding=1),
+            nn.ReLU(True),
+            nn.BatchNorm2d(512)
+        )
+
+        self.model5 = nn.Sequential(
+            nn.Conv2d(512, 512, kernel_size=3, dilation=2, padding=2),
+            nn.ReLU(True),
+            nn.Conv2d(512, 512, kernel_size=3, dilation=2, padding=2),
+            nn.ReLU(True),
+            nn.Conv2d(512, 512, kernel_size=3, dilation=2, padding=2),
+            nn.ReLU(True),
+            nn.BatchNorm2d(512)
+        )
+
+        self.model6 = nn.Sequential(
+            nn.Conv2d(512, 512, kernel_size=3, dilation=2, padding=2),
+            nn.ReLU(True),
+            nn.Conv2d(512, 512, kernel_size=3, dilation=2, padding=2),
+            nn.ReLU(True),
+            nn.Conv2d(512, 512, kernel_size=3, dilation=2, padding=2),
+            nn.ReLU(True),
+            nn.BatchNorm2d(512)
+        )
+
+        self.model7 = nn.Sequential(
+            nn.Conv2d(512, 512, kernel_size=3, padding=1),
+            nn.ReLU(True),
+            nn.Conv2d(512, 512, kernel_size=3, padding=1),
+            nn.ReLU(True),
+            nn.Conv2d(512, 512, kernel_size=3, padding=1),
+            nn.ReLU(True),
+            nn.BatchNorm2d(512)
+        )
+
+        self.model8up = nn.Sequential(
+            nn.ConvTranspose2d(512, 256, kernel_size=4, stride=2, padding=1)
+        )
+
+        self.model8 = nn.Sequential(
+            nn.ReLU(True),
+            nn.Conv2d(256, 256, kernel_size=3, padding=1),
+            nn.ReLU(True),
+            nn.Conv2d(256, 256, kernel_size=3, padding=1),
+            nn.ReLU(True),
+            nn.BatchNorm2d(256)
+        )
+
+        self.model9up = nn.Sequential(
+            nn.ConvTranspose2d(256, 128, kernel_size=4, stride=2, padding=1)
+        )
+
+        self.model9 = nn.Sequential(
+            nn.ReLU(True),
+            nn.Conv2d(128, 128, kernel_size=3, padding=1),
+            nn.ReLU(True),
+            nn.BatchNorm2d(128)
+        )
+
+        self.model10up = nn.Sequential(
+            nn.ConvTranspose2d(128, 128, kernel_size=4, stride=2, padding=1)
+        )
+
+        self.model10 = nn.Sequential(
+            nn.ReLU(True),
+            nn.Conv2d(128, 128, kernel_size=3, dilation=1, padding=1),
+            nn.LeakyReLU(negative_slope=.2)
+        )
+
+        self.model3short8 = nn.Sequential(nn.Conv2d(256, 256, kernel_size=3, padding=1))
+
+        self.model2short9 = nn.Sequential(nn.Conv2d(128, 128, kernel_size=3, padding=1))
+
+        self.model1short10 = nn.Sequential(nn.Conv2d(64, 128, kernel_size=3, padding=1))
+
+        # classification output
+        self.model_class = nn.Sequential(nn.Conv2d(256, 529, kernel_size=1, padding=0, dilation=1))
+    
+        self.model_out = nn.Sequential(
+            nn.Conv2d(128, 2, kernel_size=1, padding=0, dilation=1),
+            nn.Tanh()
+        )
+
+        self.upsample4 = nn.Sequential(nn.Upsample(scale_factor=4, mode='nearest'))
+        self.softmax = nn.Sequential(nn.Softmax(dim=1))
 
     def forward(self, input_A, input_B, mask_B):
         # input_A \in [-50,+50]

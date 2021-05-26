@@ -102,13 +102,13 @@ class FullImageColorization(nn.Module):
         model_out = [nn.Conv2d(128, 2, kernel_size=1, padding=0, dilation=1, stride=1, bias=use_bias), ]
         model_out += [nn.Tanh()]
 
-        self.model1 = nn.Sequential([
+        self.model1 = nn.Sequential(
             nn.Conv2d(4, 64, kernel_size=3, stride=1, padding=1, bias=use_bias),
             nn.ReLU(True),
             nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1, bias=use_bias),
             nn.ReLU(True),
             norm_layer(64)
-        ])
+        )
 
         self.model2 = nn.Sequential(*model2)
         self.model3 = nn.Sequential(*model3)
@@ -136,10 +136,11 @@ class FullImageColorization(nn.Module):
         # input_A \in [-50,+50]
         # input_B \in [-110, +110]
         # mask_B \in [0, +1.0]
-
-        input_A = torch.Tensor(input_A)[None, :, :, :]
-        input_B = torch.Tensor(input_B)[None, :, :, :]
-        mask_B = torch.Tensor(mask_B)[None, :, :, :]
+        
+       # TODO: check the format of input 
+        input_A = torch.Tensor(input_A).unsqueeze(0)
+        input_B = torch.Tensor(input_B).unsqueeze(0)
+        mask_B = torch.Tensor(mask_B).unsqueeze(0)
 
         # input_A = torch.Tensor(input_A).cuda()[None, :, :, :]
         # input_B = torch.Tensor(input_B).cuda()[None, :, :, :]

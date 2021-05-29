@@ -4,13 +4,18 @@ import numpy as np
 import torch
 import torch.optim as optim
 
+
+import sys
+sys.path.insert(1, '../models/')
+sys.path.insert(2, '../data/')
+
 import model_helper
 import data_helper
 
 import normal_runner
 import fusion_runner
 
-def train_model_type(v):
+def train_mode_type(v):
     if v == 'Normal' or v == 'Fusion':
         return v
     else:
@@ -22,20 +27,24 @@ if __name__ == '__main__':
     parser.add_argument(
         '-m',
         '--model',
+        required=True,
         help='The model to create or load')
     parser.add_argument(
         '-d',
         '--data',
+        required=True,
         help='The data to load')
     parser.add_argument(
         '-t',
         '--train-mode',
         type=train_mode_type,
+        required=True,
         help='The training-mode, either Normal or Fusion')
     parser.add_argument(
         '-e',
         '--epoch',
         type=int,
+        required=True,
         help='The number of training epoches')
     parser.add_argument(
         '-s',
@@ -54,9 +63,9 @@ if __name__ == '__main__':
 
     # Load runner
     runner = None
-    if args.train_mode = 'Normal':
+    if args.train_mode == 'Normal':
         runner = normal_runner
-    elif args.train_mode = 'Fusion':
+    elif args.train_mode == 'Fusion':
         runner = fusion_runner
 
     # Training
@@ -79,4 +88,4 @@ if __name__ == '__main__':
             valid_losses.append(loss)
 
         if args.save:
-            model_helper.save_model(args.model + '_' + str(i))
+            model_helper.save_model(model, args.model + '_' + str(i))

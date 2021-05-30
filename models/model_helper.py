@@ -1,3 +1,5 @@
+from . import full_image_colorization, fusion_module, instance_colorization
+
 def get_model(file_name):
     '''
     This function should return an torch.nn model indicated by file_name. All
@@ -11,8 +13,14 @@ def get_model(file_name):
         - Start with 'H', means the full image network.
         - Start with 'F', means the fusion of instance and full image network.
     '''
-    pass
-
+    if file_name[0] == 'I':
+        model = instance_colorization.InstanceColorization
+    elif file_name[0] == 'H':
+        model = full_image_colorization.FullImageColorization
+    elif file_name[0] == 'F':
+        model = fusion_module.FusionModule
+    return model 
+    
 def save_model(model, file_name):
     '''
     The function should store the model into a file named file_name.

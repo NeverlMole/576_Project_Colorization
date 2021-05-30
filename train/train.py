@@ -75,7 +75,7 @@ if __name__ == '__main__':
     betas = (0.99, 0.999)
     use_cuda = True
     for i in range(args.epoch):  # loop over the dataset multiple times
-        optimizer = otorch.optim.Adamax(model.parameters(),
+        optimizer = torch.optim.Adamax(model.parameters(),
                                         lr=learning_rate,
                                         betas=betas)
 

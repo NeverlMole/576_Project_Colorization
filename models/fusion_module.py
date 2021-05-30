@@ -210,23 +210,28 @@ class PerLayerFusion(nn.Module):
 
         self.softmax_norm = nn.Softmax(dim=1)
 
-    def resize_and_zero_padding(self, instance_feature, instance_weight_map, bbox):
-        # Resize the instance_feature and the instance_weight_map to respect the bbox, which defines the size and location of the instance at the full_image_feature. 
-        # Zero padding to the size of full_image_feature
-        # Input: bbox: [L_pad, R_pad, T_pad, B_pad, rh, rw]
-        instance_feature = nn.functional.interpolate(instance_feature, size=(bbox[4], bbox[5]), mode='nearest')
-        instance_feature = nn.functional.pad(instance_feature, (bbox[0], bbox[1], bbox[2], bbox[3]))
-        
-        instance_weight_map = nn.functional.interpolate(instance_weight_map, size=(bbox[4], bbox[5]), mode='nearest')
-        instance_weight_map = nn.functional.pad(instance_weight_map, (bbox[0], bbox[1], bbox[2], bbox[3]))
-        return instance_feature, instance_weight_map
-
     def forward(self, full_image_feature, instance_features, bboxes):
+        # full_image_feature: (1, C, H, W)
         full_image_weight_map = self.full_image_conv(full_image_feature)
-        
+        # stacked_weight_map: (1, C', H, W)
+        stacked_weight_map = full_image_weight_map.clone()
+        resized_and_padded_feature_map_list = []
         for i, instance_feature in enumerate(instance_features):
             instance_weight_map = self.instance_convs(instance_feature)
-            instance_feature, instance_weight_map = self.resize_and_zero_padding(instance_feature, instance_weight_map, bboxes[i])
-            
-            
+            # bbox: [L_pad, R_pad, T_pad, B_pad, rh, rw]
+            bbox = bboxes[i]
+            # Resize the instance_feature and the instance_weight_map to respect the bbox, which defines the size and location of the instance at the full_image_feature. 
+            instance_feature = nn.functional.interpolate(instance_feature, size=(bbox[4], bbox[5]), mode='nearest')
+            # Zero padding to the size of full_image_feature
+            instance_feature = nn.functional.pad(instance_feature, (bbox[0], bbox[1], bbox[2], bbox[3]))
+            instance_weight_map = nn.functional.interpolate(instance_weight_map, size=(bbox[4], bbox[5]), mode='nearest')
+            instance_weight_map = nn.functional.pad(instance_weight_map, (bbox[0], bbox[1], bbox[2], bbox[3]))
+            resized_and_padded_feature_map_list.append(instance_feature)
 
+            torch.cat((stacked_weight_map, instance_weight_map), dim=1)
+            # After that, we stack all the weight maps, apply softmax on each pixel, and obtain the fused feature using a weighted sum
+        stacked_weight_map = self.softmax_norm(stacked_weight_map)
+        fused_feature = stacked_weight_map[:, 0, :, :] * full_image_feature
+        for i in range(stacked_weight_map.size[1] - 1):
+            fused_feature += stacked_weight_map[:, i + 1, :, :] * resized_and_padded_feature_map_list[i]
+        return fused_feature

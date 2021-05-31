@@ -107,9 +107,9 @@ class InstanceColorization(nn.Module):
         )
 
         # Symmetric Shortcut connections
-        self.model3shortcut8 = nn.Sequential(nn.Conv2d(256, 256, kernel_size=3, padding=1))
-        self.model2shortcut9 = nn.Sequential(nn.Conv2d(128, 128, kernel_size=3, padding=1))
-        self.model1shortcut10 = nn.Sequential(nn.Conv2d(64, 128, kernel_size=3, padding=1))
+        self.model3short8 = nn.Sequential(nn.Conv2d(256, 256, kernel_size=3, padding=1))
+        self.model2short9 = nn.Sequential(nn.Conv2d(128, 128, kernel_size=3, padding=1))
+        self.model1short10 = nn.Sequential(nn.Conv2d(64, 128, kernel_size=3, padding=1))
 
         # classification output
         self.model_class = nn.Sequential(nn.Conv2d(256, 529, kernel_size=1))
@@ -136,12 +136,12 @@ class InstanceColorization(nn.Module):
         conv6 = self.model6(conv5)
         conv7 = self.model7(conv6)
 
-        conv8_up = self.model8up(conv7) + self.model3shortcut8(conv3)
+        conv8_up = self.model8up(conv7) + self.model3short8(conv3)
         conv8 = self.model8(conv8_up)
 
-        conv9_up = self.model9up(conv8) + self.model2shortcut9(conv2)
+        conv9_up = self.model9up(conv8) + self.model2short9(conv2)
         conv9 = self.model9(conv9_up)
-        conv10_up = self.model10up(conv9) + self.model1shortcut10(conv1)
+        conv10_up = self.model10up(conv9) + self.model1short10(conv1)
         conv10 = self.model10(conv10_up)
         out_reg = self.model_out(conv10)
 

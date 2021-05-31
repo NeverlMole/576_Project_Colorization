@@ -133,9 +133,9 @@ class FusionModule(nn.Module):
         self.fusion10 = PerLayerFusion(128)
 
         # Symmetric Shortcut connections
-        self.model3shortcut8 = nn.Sequential(nn.Conv2d(256, 256, kernel_size=3, padding=1))
-        self.model2shortcut9 = nn.Sequential(nn.Conv2d(128, 128, kernel_size=3, padding=1))
-        self.model1shortcut10 = nn.Sequential(nn.Conv2d(64, 128, kernel_size=3, padding=1))
+        self.model3short8 = nn.Sequential(nn.Conv2d(256, 256, kernel_size=3, padding=1))
+        self.model2short9 = nn.Sequential(nn.Conv2d(128, 128, kernel_size=3, padding=1))
+        self.model1short10 = nn.Sequential(nn.Conv2d(64, 128, kernel_size=3, padding=1))
 
         # classification output
         self.model_class = nn.Sequential(nn.Conv2d(256, 529, kernel_size=1))
@@ -170,16 +170,16 @@ class FusionModule(nn.Module):
         conv7 = self.model7(conv6)
         conv7 = self.fusion7(conv7, instance_features_collection["conv7"], bboxes_collection["32"])
 
-        conv8_up = self.model8up(conv7) + self.model3shortcut8(conv3)
+        conv8_up = self.model8up(conv7) + self.model3short8(conv3)
         conv8_up = self.fusion8up(conv8_up, instance_features_collection["conv8_up"], bboxes_collection["64"])
         conv8 = self.model8(conv8_up)
         conv8 = self.fusion8(conv8, instance_features_collection["conv8"], bboxes_collection["64"])
 
-        conv9_up = self.model9up(conv8) + self.model2shortcut9(conv2)
+        conv9_up = self.model9up(conv8) + self.model2short9(conv2)
         conv9_up = self.fusion9up(conv9_up, instance_features_collection["conv9_up"], bboxes_collection["128"])
         conv9 = self.model9(conv9_up)
         conv9 = self.fusion9(conv9, instance_features_collection["conv9"], bboxes_collection["128"])
-        conv10_up = self.model10up(conv9) + self.model1shortcut10(conv1)
+        conv10_up = self.model10up(conv9) + self.model1short10(conv1)
         conv10_up = self.fusion10up(conv10_up, instance_features_collection["conv10_up"], bboxes_collection["256"])
         conv10 = self.model10(conv10_up)
         conv10 = self.fusion10(conv10, instance_features_collection["conv10"], bboxes_collection["256"])

@@ -122,12 +122,11 @@ class InstanceColorization(nn.Module):
         self.upsample4 = nn.Sequential(nn.Upsample(scale_factor=4))
         self.softmax = nn.Sequential(nn.Softmax(dim=1))
 
-    def forward(self, input_A, input_B, mask_B):        
-       # TODO: check the format of input 
-        input_A = torch.Tensor(input_A).unsqueeze(0)
-        input_B = torch.Tensor(input_B).unsqueeze(0)
-        mask_B = torch.Tensor(mask_B).unsqueeze(0)
-
+    def forward(self, input_A):        
+        input_A = torch.Tensor(input_A).unsqueeze(0) # shape: (1, C, H, W)
+        input_B = torch.zeros_like(input_A) # Placeholder, not used in this paper 
+        mask_B = torch.zeros_like(input_A) # Placeholder, not used in this paper 
+        
         conv1 = self.model1(torch.cat((input_A / 100., input_B, mask_B), dim=1))
         conv2 = self.model2(conv1[:, :, ::2, ::2])
         conv3 = self.model3(conv2[:, :, ::2, ::2])

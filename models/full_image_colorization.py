@@ -115,7 +115,7 @@ class FullImageColorization(nn.Module):
 
         # classification output
         self.model_class = nn.Sequential(nn.Conv2d(256, 529, kernel_size=1))
-    
+
         self.model_out = nn.Sequential(
             nn.Conv2d(128, 2, kernel_size=1),
             nn.Tanh()
@@ -125,16 +125,14 @@ class FullImageColorization(nn.Module):
         self.softmax = nn.Sequential(nn.Softmax(dim=1))
 
     def forward(self, input_A):
-        # input_A has shape (C, H, W)
+        # input_A has shape (batch_size, H, W)
         # input_A \in [-50,+50]
-        # input_B \in [-110, +110]
-        # mask_B \in [0, +1.0]
-        
-        input_A = torch.Tensor(input_A).unsqueeze(0) # shape: (1, C, H, W)
-        input_B = torch.zeros_like(input_A) # Placeholder, not used in this paper 
-        mask_B = torch.zeros_like(input_A) # Placeholder, not used in this paper 
+        input_A = input_A.unsqueeze(1) # shape: (1, H, W)
+        mask_1 = torch.zeros_like(input_A) # Placeholder, not used in this paper
+        mask_2 = torch.zeros_like(input_A) # Placeholder, not used in this paper
+        mask_3 = torch.zeros_like(input_A) # Placeholder, not used in this paper
 
-        conv1 = self.model1(torch.cat((input_A / 100., input_B, mask_B), dim=1))
+        conv1 = self.model1(torch.cat((input_A / 100., mask_1, mask_2, mask_3), dim=1))
         # For conv2, conv3 and conv4, feature tensors are progressively halved spatially
         conv2 = self.model2(conv1[:, :, ::2, ::2])
         conv3 = self.model3(conv2[:, :, ::2, ::2])
@@ -145,7 +143,7 @@ class FullImageColorization(nn.Module):
 
         conv8_up = self.model8up(conv7) + self.model3short8(conv3)
         conv8 = self.model8(conv8_up)
-        
+
         # TODO: not sure why returning out_cl
         out_cl = self.model_class(conv8)
 
@@ -154,4 +152,4 @@ class FullImageColorization(nn.Module):
         conv10_up = self.model10up(conv9) + self.model1short10(conv1)
         conv10 = self.model10(conv10_up)
         out_reg = self.model_out(conv10)
-        return out_cl, out_reg * 110
+        return out_reg * 110

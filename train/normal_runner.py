@@ -6,19 +6,18 @@ import torch.nn as nn
 import tqdm
 import numpy as np
 
-def run(mode, dataloader, model, optimizer=None, use_cuda = True):
+def run(mode, dataloader, model, optimizer=None):
     running_loss = []
     f_loss = nn.SmoothL1Loss()
 
     actual_labels = []
     predictions = []
-    for inputs, t_outputs in tqdm.tqdm(dataloader):
-        if use_cuda:
-            inputs, t_outputs = inputs.cuda(), t_outputs.cuda()
+    for inputs, targets in tqdm.tqdm(dataloader):
+        inputs = inputs.cuda()
+        targets = targets.cuda()
 
-        # forward + backward + optimize
         outputs = model(inputs)
-        loss = f_loss(outputs,t_outputs)
+        loss = f_loss(outputs,targets)
         running_loss.append(loss.item())
 
         if mode == "train":

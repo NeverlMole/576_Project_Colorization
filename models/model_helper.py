@@ -1,6 +1,8 @@
-import os 
+import os
 import torch
-from . import full_image_colorization, fusion_module, instance_colorization
+import full_image_colorization, fusion_module, instance_colorization
+
+model_data_path = '../model_data/'
 
 def get_model(file_name):
     '''
@@ -15,24 +17,25 @@ def get_model(file_name):
         - Start with 'H', means the full image network.
         - Start with 'F', means the fusion of instance and full image network.
     '''
-    filename = os.path.split(file_name)
-    # Initialize model 
-    if filename[0] == 'I':
+    model_path = model_data_path + file_name + '.pth'
+    # Initialize model
+    if file_name[0] == 'I':
         model = instance_colorization.InstanceColorization()
-    elif filename[0] == 'H':
+    elif file_name[0] == 'H':
         model = full_image_colorization.FullImageColorization()
-    elif filename[0] == 'F':
+    elif file_name[0] == 'F':
         model = fusion_module.FusionModule()
-    
+
     # Load model state dict if exists
-    if os.path.exists(file_name):
-        model.load_state_dict(torch.load(file_name))
+    if os.path.exists(model_path):
+        model.load_state_dict(torch.load(model_path))
         return model, True
-    return model, False 
-    
+    return model, False
+
 def save_model(model, file_name):
     '''
     The function should store the model into a file named file_name.
     '''
     # Save the model (state_dict) for inference
-    torch.save(model.state_dict(), file_name)
+    model_path = model_data_path + file_name + '.pth'
+    torch.save(model.state_dict(), model_path)

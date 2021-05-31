@@ -49,9 +49,14 @@ if __name__ == '__main__':
     parser.add_argument(
         '-s',
         '--save',
-        type=bool,
-        default=True,
-        help='Whether to save the model')
+        type=int,
+        default=1,
+        help='The epoch intervals to save the model. 0 means not save')
+    parser.add_argument(
+        '--learning-rate',
+        type=float,
+        default=.001,
+        help='The learning rate of the model')
 
     args = parser.parse_args()
 
@@ -59,7 +64,8 @@ if __name__ == '__main__':
     trainloader, validloader = data_helper.get_data_loader(args.data)
 
     # Load Model
-    model = model_helper.get_model(args.model)
+    model, _ = model_helper.get_model(args.model)
+    model = model.cuda()
 
     # Load runner
     runner = None
@@ -71,21 +77,19 @@ if __name__ == '__main__':
     # Training
     train_losses = []
     valid_losses = []
-    learning_rate = 1
+    learning_rate = args.learning_rate
     betas = (0.99, 0.999)
-    use_cuda = True
     for i in range(args.epoch):  # loop over the dataset multiple times
         optimizer = torch.optim.Adamax(model.parameters(),
                                         lr=learning_rate,
                                         betas=betas)
 
-        loss = runner.run('train', trainloader, model, optimizer,
-                              use_cuda=use_cuda)
+        loss = runner.run('train', trainloader, model, optimizer)
 
         train_losses.append(loss)
         with torch.no_grad():
-            loss = runner.run('valid', validloader, model, use_cuda=use_cuda)
+            loss = runner.run('valid', validloader, model)
             valid_losses.append(loss)
 
-        if args.save:
+        if args.save > 0 and (i + 1) % args.save == 0:
             model_helper.save_model(model, args.model + '_' + str(i))

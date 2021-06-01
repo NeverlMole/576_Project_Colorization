@@ -57,11 +57,18 @@ if __name__ == '__main__':
         type=float,
         default=.001,
         help='The learning rate of the model')
+    parser.add_argument(
+        '-b',
+        '--batch-size',
+        type=int,
+        default=32,
+        help='Batch size')
 
     args = parser.parse_args()
 
     # Load Data
-    trainloader, validloader = data_helper.get_data_loader(args.data)
+    trainloader, validloader = data_helper.get_data_loader(args.data,
+                                                batch_size=args.batch_size)
 
     # Load Model
     model, _ = model_helper.get_model(args.model)
@@ -81,8 +88,8 @@ if __name__ == '__main__':
     betas = (0.99, 0.999)
     for i in range(args.epoch):  # loop over the dataset multiple times
         optimizer = torch.optim.Adamax(model.parameters(),
-                                        lr=learning_rate,
-                                        betas=betas)
+                                       lr=learning_rate,
+                                       betas=betas)
 
         loss = runner.run('train', trainloader, model, optimizer)
 

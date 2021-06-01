@@ -6,12 +6,13 @@ import torch.nn as nn
 import tqdm
 import numpy as np
 
+print_every = 10
+
 def run(mode, dataloader, model, optimizer=None):
     running_loss = []
     f_loss = nn.SmoothL1Loss()
 
-    actual_labels = []
-    predictions = []
+    cnt = 0
     for inputs, targets in tqdm.tqdm(dataloader):
         inputs = inputs.cuda()
         targets = targets.cuda()
@@ -20,6 +21,11 @@ def run(mode, dataloader, model, optimizer=None):
         loss = f_loss(outputs,targets)
         running_loss.append(loss.item())
 
+        cnt += 1
+        if cnt % 10 == 0:
+            print(mode, "Loss:", loss.item())
+
+
         if mode == "train":
             # zero the parameter gradients
             optimizer.zero_grad()
@@ -27,7 +33,5 @@ def run(mode, dataloader, model, optimizer=None):
             optimizer.step()
 
     loss = np.mean(running_loss)
-
-    print(mode, "Loss:", loss)
 
     return loss

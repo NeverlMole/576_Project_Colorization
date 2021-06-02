@@ -144,9 +144,6 @@ class FullImageColorization(nn.Module):
         conv8_up = self.model8up(conv7) + self.model3short8(conv3)
         conv8 = self.model8(conv8_up)
 
-        # TODO: not sure why returning out_cl
-        out_cl = self.model_class(conv8)
-
         conv9_up = self.model9up(conv8) + self.model2short9(conv2)
         conv9 = self.model9(conv9_up)
         conv10_up = self.model10up(conv9) + self.model1short10(conv1)

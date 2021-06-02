@@ -4,6 +4,8 @@ import full_image_colorization, fusion_module, instance_colorization
 
 model_data_path = '../model_data/'
 
+# TODO: load two models into fusion module 
+
 def get_model(file_name):
     '''
     This function should return an torch.nn model indicated by file_name. All

@@ -127,7 +127,7 @@ class FullImageColorization(nn.Module):
     def forward(self, input_A):
         # input_A has shape (batch_size, H, W)
         # input_A \in [-50,+50]
-        input_A = input_A.unsqueeze(1) # shape: (1, H, W)
+        input_A = input_A.unsqueeze(1) # shape: (B, 1, H, W)
         mask_1 = torch.zeros_like(input_A) # Placeholder, not used in this paper
         mask_2 = torch.zeros_like(input_A) # Placeholder, not used in this paper
         mask_3 = torch.zeros_like(input_A) # Placeholder, not used in this paper

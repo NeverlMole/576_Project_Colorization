@@ -22,9 +22,18 @@ class Full_img_dataset(Data.Dataset):
 
     def __len__(self):
         return len(self.img_list)
-"""
-class Instance_img_dataset():
-	def __init__(self, args):
 
+class Instance_img_dataset(Data.Dataset):
+    def __init__(self, img_dir):
+        self.img_dir = img_dir
+        self.bbx_dir = "{0}_bbox".format(img_dir)
+        self.bbx_list = os.listdir(self.bbx_dir)
 
-	def __getitem__(self, index):"""
+    def __getitem__(self, index):
+        bbx_path = os.path.join(self.bbx_dir, self.bbx_list[index])
+        img_path = os.path.join(self.img_dir, self.bbx_list[index].split('.')[0] + '.jpg')
+        out = out_instance_data(img_path, bbx_path)
+        return out
+
+    def __len__(self):
+        return len(self.bbx_list)

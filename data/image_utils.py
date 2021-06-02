@@ -1,6 +1,6 @@
 from skimage import color
 from PIL import Image
-
+from random import sample
 import torch
 import torch.utils.data as Data
 import torchvision.transforms as transforms
@@ -25,6 +25,38 @@ def img_transform(im):
 							transforms.ToTensor()])
     output = T(im)
     return output
+
+def get_bbx(npz_path):
+    x = np.load(npz_path)
+    assert 'bbox' in x
+    assert 'scores' in x
+
+    # get all bbxs
+    x = x['bbox'].astype(np.int32)
+    # x1, y1: left top x and y coordinates
+    # x2, y2: right bottom x and y coordinates
+    # sample a bbx
+    N = range(len(x))
+    n = sample(N, 1)
+    x1, y1, x2, y2 = x[n[0]]
+
+    return x1, y1, x2, y2
+
+def out_instance_data(img_path, bbx_path):
+    rgb_img, gray_img = get_gray_rgb_pil(img_path)
+
+    x1, y1, x2, y2 = get_bbx(bbx_path)
+    # crop_img
+    rgb_img, gray_img = rgb_img.crop((x1, y1, x2, y2)), gray_img.crop((x1, y1, x2, y2))
+    rgb_img = img_transform(rgb_img)
+    gray_img = img_transform(gray_img)
+    rgb_lab_img = get_lab_img(rgb_img)
+    gray_lab_img = get_lab_img(gray_img)
+
+    # return gray image with size H*W, and lab image with first two channel.
+    return gray_lab_img['A'], rgb_lab_img['B']
+
+
 
 def out_full_data(img_path):
     rgb_img, gray_img = get_gray_rgb_pil(img_path)

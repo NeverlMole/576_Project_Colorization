@@ -77,7 +77,7 @@ if __name__ == '__main__':
 
         cnt += 1
 
-        if cnt >= args.num:
+        if args.num != None and cnt >= args.num:
             break
 
     print('Total Loss:', np.mean(losses))

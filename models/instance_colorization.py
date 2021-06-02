@@ -123,11 +123,14 @@ class InstanceColorization(nn.Module):
         self.softmax = nn.Sequential(nn.Softmax(dim=1))
 
     def forward(self, input_A):        
-        input_A = torch.Tensor(input_A).unsqueeze(0) # shape: (1, C, H, W)
-        input_B = torch.zeros_like(input_A) # Placeholder, not used in this paper 
-        mask_B = torch.zeros_like(input_A) # Placeholder, not used in this paper 
-        
-        conv1 = self.model1(torch.cat((input_A / 100., input_B, mask_B), dim=1))
+        # input_A has shape (batch_size, H, W)
+        # input_A \in [-50,+50]
+        input_A = input_A.unsqueeze(1) # shape: (B, 1, H, W)
+        mask_1 = torch.zeros_like(input_A) # Placeholder, not used in this paper
+        mask_2 = torch.zeros_like(input_A) # Placeholder, not used in this paper
+        mask_3 = torch.zeros_like(input_A) # Placeholder, not used in this paper
+
+        conv1 = self.model1(torch.cat((input_A, mask_1, mask_2, mask_3), dim=1))
         conv2 = self.model2(conv1[:, :, ::2, ::2])
         conv3 = self.model3(conv2[:, :, ::2, ::2])
         conv4 = self.model4(conv3[:, :, ::2, ::2])
@@ -160,4 +163,4 @@ class InstanceColorization(nn.Module):
             "conv10": conv10
         }
 
-        return out_reg * 110, instance_features
+        return out_reg, instance_features

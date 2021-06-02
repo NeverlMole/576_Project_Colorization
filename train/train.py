@@ -4,6 +4,7 @@ import numpy as np
 import torch
 import torch.optim as optim
 
+import os
 
 import sys
 sys.path.insert(1, '../models/')
@@ -63,6 +64,16 @@ if __name__ == '__main__':
         type=int,
         default=32,
         help='Batch size')
+    parser.add_argument(
+        '--no-valid',
+        type=bool,
+        default=False,
+        help='Whether to not test valid set.')
+    parser.add_argument(
+        '-o',
+        '--output-model',
+        default=None,
+        help='The name of the output model. None means no save.')
 
     args = parser.parse_args()
 
@@ -94,9 +105,27 @@ if __name__ == '__main__':
         loss = runner.run('train', trainloader, model, optimizer)
 
         train_losses.append(loss)
-        with torch.no_grad():
-            loss = runner.run('valid', validloader, model)
-            valid_losses.append(loss)
 
-        if args.save > 0 and (i + 1) % args.save == 0:
-            model_helper.save_model(model, args.model + '_' + str(i))
+        if not args.no_valid:
+            with torch.no_grad():
+                loss = runner.run('valid', validloader, model)
+                valid_losses.append(loss)
+
+        if args.output_model != None and args.save > 0 and (i + 1) % args.save == 0:
+            model_helper.save_model(model, args.output_model + '_' + str(i))
+
+    if args.output_model != None:
+        model_helper.save_model(model, args.output_model)
+
+    log_name = args.model + '_' + args.data
+    log_path = '../log/'
+    if not os.path.exists(log_path):
+        os.makedirs(log_path)
+    log_path = log_path + log_name + '.log'
+    with open(log_path, 'w') as f:
+        f.write('Train loss:\n')
+        for loss in train_losses:
+            f.write(str(loss) + '\n')
+        f.write('Valid loss:\n')
+        for loss in valid_losses:
+            f.write(str(loss) + '\n')

@@ -28,18 +28,22 @@ def get_test_data_loader(data_name, batch_size=32):
 
 
 def get_data_loader(data_name, batch_size=32):
+    train_name = data_name + '/train'
+    valid_name = data_name + '/valid'
+    train_loader = get_single_data_loader(train_name, batch_size)
+    valid_loader = get_single_data_loader(valid_name, batch_size)
+
+    return train_loader, valid_loader
+
+
+def get_single_data_loader(data_name, batch_size=32):
     if data_name[0] == 'H':
         file_name = data_name[2:]
         data_path = image_path + file_name + '/'
-        train_path = data_path + 'train/'
-        valid_path = data_path + 'valid/'
-        train_dataset = dataset.Full_img_dataset(img_dir=train_path)
-        valid_dataset = dataset.Full_img_dataset(img_dir=valid_path)
+        data_dataset = dataset.Full_img_dataset(img_dir=data_path)
 
-        train_loader = torch.utils.data.DataLoader(train_dataset,
-                                                   batch_size=batch_size)
-        valid_loader = torch.utils.data.DataLoader(valid_dataset,
+        data_loader = torch.utils.data.DataLoader(data_dataset,
                                                    batch_size=batch_size)
 
-        return train_loader, valid_loader
+        return data_loader
 

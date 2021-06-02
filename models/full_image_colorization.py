@@ -132,7 +132,7 @@ class FullImageColorization(nn.Module):
         mask_2 = torch.zeros_like(input_A) # Placeholder, not used in this paper
         mask_3 = torch.zeros_like(input_A) # Placeholder, not used in this paper
 
-        conv1 = self.model1(torch.cat((input_A / 100., mask_1, mask_2, mask_3), dim=1))
+        conv1 = self.model1(torch.cat((input_A, mask_1, mask_2, mask_3), dim=1))
         # For conv2, conv3 and conv4, feature tensors are progressively halved spatially
         conv2 = self.model2(conv1[:, :, ::2, ::2])
         conv3 = self.model3(conv2[:, :, ::2, ::2])
@@ -152,4 +152,4 @@ class FullImageColorization(nn.Module):
         conv10_up = self.model10up(conv9) + self.model1short10(conv1)
         conv10 = self.model10(conv10_up)
         out_reg = self.model_out(conv10)
-        return out_reg * 110
+        return out_reg

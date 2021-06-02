@@ -8,6 +8,9 @@ import numpy as np
 import cv2
 import os
 
+from skimage import io
+from skimage import img_as_ubyte
+
 fine_size = 256
 l_cent = 50.
 l_norm = 100.
@@ -175,3 +178,11 @@ def lab2rgb(lab_rs):
         # print('lab2rgb')
         # embed()
     return out
+
+## Save image to file
+# Save lab image to file
+def save_image_from_tensor(path, lab_img):
+    img = torch.clamp(lab2rgb(lab_img), 0.0, 1.0)
+    img = np.transpose(img.data.numpy(), (1, 2, 0))
+
+    io.imsave(path, img_as_ubyte(img))

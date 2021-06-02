@@ -8,9 +8,9 @@ import numpy as np
 
 print_every = 10
 
-def run(mode, dataloader, model, optimizer=None):
+def run(mode, dataloader, model, optimizer=None, print_every=10, batch_num=None):
     running_loss = []
-    f_loss = nn.SmoothL1Loss()
+    f_loss = nn.SmoothL1Loss(beta=1 / 110.)
 
     cnt = 0
     for inputs, targets in tqdm.tqdm(dataloader):
@@ -25,13 +25,15 @@ def run(mode, dataloader, model, optimizer=None):
         if cnt % 10 == 0:
             print(mode, "Loss:", loss.item())
 
-
         if mode == "train":
             # zero the parameter gradients
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
-    loss = np.mean(running_loss)
+        if batch_num != None and cnt >= batch_num:
+            return
 
-    return loss
+    print(mode, "Loss:", np.mean(running_loss))
+
+    return running_loss

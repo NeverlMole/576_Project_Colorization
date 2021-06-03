@@ -4,7 +4,7 @@ import torch.nn as nn
 
 class InstanceColorization(nn.Module):
     def __init__(self):
-        super(InstanceColorization, self).__init__()
+        super(FullImageColorization, self).__init__()
         
         self.model1 = nn.Sequential(
             nn.Conv2d(4, 64, kernel_size=3, padding=1),

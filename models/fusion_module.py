@@ -256,7 +256,7 @@ class PerLayerFusion(nn.Module):
             # Zero padding to the size of full_image_feature
             instance_feature = nn.functional.pad(instance_feature, (bbox[0], bbox[1], bbox[2], bbox[3]))
             instance_weight_map = nn.functional.interpolate(instance_weight_map, size=(bbox[4], bbox[5]), mode='nearest')
-            instance_weight_map = nn.functional.pad(instance_weight_map, (bbox[0], bbox[1], bbox[2], bbox[3]))
+            instance_weight_map = nn.functional.pad(instance_weight_map, (bbox[0], bbox[1], bbox[2], bbox[3]), value=-100000)
             resized_and_padded_feature_map_list.append(instance_feature)
 
             torch.cat((stacked_weight_map, instance_weight_map), dim=1)

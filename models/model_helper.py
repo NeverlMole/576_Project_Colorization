@@ -20,7 +20,7 @@ def get_model(file_name):
     model_path = model_data_path + file_name + '.pth'
     # Initialize model
     if file_name[0] == 'I':
-        model = instance_colorization.InstanceColorization()
+        model = full_image_colorization.FullImageColorization()
     elif file_name[0] == 'H':
         model = full_image_colorization.FullImageColorization()
     elif file_name[0] == 'F':
@@ -28,20 +28,7 @@ def get_model(file_name):
 
     # Load model state dict if exists
     if os.path.exists(model_path):
-        if file_name[0] == 'F':
-            full_image_state_dict = torch.load(full_image_model_path)
-            instance_state_dict = torch.load(instance_model_path)
-            # Load full-image network
-            model.load_state_dict(instance_state_dict, strict=False)
-            fusion_state_dict = model.state_dict()
-            # Load instance network
-            for name, param in instance_state_dict.items():
-                if isinstance(param, torch.nn.parameter.Parameter):
-                    # backwards compatibility for serialized parameters
-                    param = param.data
-                fusion_state_dict["instance_model." + name].copy_(param)
-        else:
-            model.load_state_dict(torch.load(model_path))
+        model.load_state_dict(torch.load(model_path))
         return model, True
     return model, False
 
@@ -52,3 +39,22 @@ def save_model(model, file_name):
     # Save the model (state_dict) for inference
     model_path = model_data_path + file_name + '.pth'
     torch.save(model.state_dict(), model_path)
+
+def get_fusion_model_for_training(full_image_filename, instance_filename):
+    model = fusion_module.FusionModule()
+
+    full_image_model_path = model_data_path + full_image_filename + '.pth'
+    instance_model_path = model_data_path + instance_filename + '.pth'
+
+    full_image_state_dict = torch.load(full_image_model_path)
+    instance_state_dict = torch.load(instance_model_path)
+    # Load full-image network
+    model.load_state_dict(full_image_state_dict, strict=False)
+    fusion_state_dict = model.state_dict()
+    # Load instance network
+    for name, param in instance_state_dict.items():
+        if isinstance(param, torch.nn.parameter.Parameter):
+            # backwards compatibility for serialized parameters
+            param = param.data
+        fusion_state_dict["instance_model." + name].copy_(param)
+    return model

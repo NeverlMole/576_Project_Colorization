@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-
+import full_image_colorization, instance_colorization
 
 class FusionModule(nn.Module):
     def __init__(self):
@@ -148,12 +148,38 @@ class FusionModule(nn.Module):
         self.upsample4 = nn.Sequential(nn.Upsample(scale_factor=4))
         self.softmax = nn.Sequential(nn.Softmax(dim=1))
 
-    def forward(self, input_A, instance_features_collection, bboxes_collection):
-        input_A = torch.Tensor(input_A).unsqueeze(0) # shape: (1, C, H, W)
-        input_B = torch.zeros_like(input_A) # Placeholder, not used in this paper 
-        mask_B = torch.zeros_like(input_A) # Placeholder, not used in this paper 
+        self.instance_model = instance_colorization.InstanceColorization()
+        # TODO: Set instance model to evaluation mode 
+        self.instance_model.eval()
 
-        conv1 = self.model1(torch.cat((input_A / 100., input_B, mask_B), dim=1))
+    def forward(self, input_A, instances, bboxes_collection):
+        '''
+        Inputs:
+            - input_A: grayscale full image, with shape (B, H, W) = (1, H, W)
+            - instances: with shape (N, H, W), where N is the number of instances in the full image 
+            - bboxes_collection: a dict of format
+                {
+                    "32": box_info_32,
+                    "64": box_info_64,
+                    "128": box_info_128,
+                    "256": box_info_256
+                }
+            box_info_32 has shape (N, 6), which stores bbox information of all N instances at 32x32 resolution. (padding_left, padding_right, padding_top, padding_bottom, rh, rw) = box_info_32[i] gives information of the i-th instance.
+                - rh, rw: resized height and weight of the bounding box after mapping to the 32x32 map. Used by nn.functional.interpolate.
+                - padding_left, padding_right, padding_top, padding_bottom: Used by nn.functional.pad to pad the resized weight map back to 32x32.
+        Note:
+            - Batch size should set to 1
+        '''
+        # Extract features from instance images 
+        # instance_features_collection["key"] has shape (N, C', H', W')
+        _, instance_features_collection = self.instance_model(instances)
+
+        input_A = input_A.unsqueeze(1) # shape: (B, 1, H, W) = (1, 1, H, W)
+        mask_1 = torch.zeros_like(input_A) # Placeholder, not used in this paper
+        mask_2 = torch.zeros_like(input_A) # Placeholder, not used in this paper
+        mask_3 = torch.zeros_like(input_A) # Placeholder, not used in this paper
+
+        conv1 = self.model1(torch.cat((input_A, mask_1, mask_2, mask_3), dim=1))
         # inputs to PerLayerFusion: full_image_feature, instance_features, bboxes
         conv1 = self.fusion1(conv1, instance_features_collection["conv1"], bboxes_collection["256"])
         conv2 = self.model2(conv1[:, :, ::2, ::2])
@@ -183,7 +209,7 @@ class FusionModule(nn.Module):
         conv10 = self.model10(conv10_up)
         conv10 = self.fusion10(conv10, instance_features_collection["conv10"], bboxes_collection["256"])
         out_reg = self.model_out(conv10)
-        return out_reg * 110
+        return out_reg
 
 class PerLayerFusion(nn.Module):
     def __init__(self, in_channels):
@@ -210,14 +236,20 @@ class PerLayerFusion(nn.Module):
         self.softmax_norm = nn.Softmax(dim=1)
 
     def forward(self, full_image_feature, instance_features, bboxes):
-        # full_image_feature: (1, C, H, W)
+        '''
+        Inputs:
+            - full_image_feature: (1, C, H, W)
+            - instance_features: (N, C, H, W)
+            - bboxes: (N, 6)
+        '''
         full_image_weight_map = self.full_image_conv(full_image_feature)
-        # stacked_weight_map: (1, C', H, W)
+        # stacked_weight_map: (1, 1 + N, H, W)
         stacked_weight_map = full_image_weight_map.clone()
         resized_and_padded_feature_map_list = []
         for i, instance_feature in enumerate(instance_features):
+            instance_feature = instance_feature.unsqueeze(0) # with shape (1, C, H, W)
             instance_weight_map = self.instance_convs(instance_feature)
-            # bbox: [L_pad, R_pad, T_pad, B_pad, rh, rw]
+            # bbox: [padding_left, padding_right, padding_top, padding_bottom, rh, rw]
             bbox = bboxes[i]
             # Resize the instance_feature and the instance_weight_map to respect the bbox, which defines the size and location of the instance at the full_image_feature. 
             instance_feature = nn.functional.interpolate(instance_feature, size=(bbox[4], bbox[5]), mode='nearest')
@@ -230,7 +262,9 @@ class PerLayerFusion(nn.Module):
             torch.cat((stacked_weight_map, instance_weight_map), dim=1)
             # After that, we stack all the weight maps, apply softmax on each pixel, and obtain the fused feature using a weighted sum
         stacked_weight_map = self.softmax_norm(stacked_weight_map)
-        fused_feature = stacked_weight_map[:, 0, :, :] * full_image_feature
-        for i in range(stacked_weight_map.size[1] - 1):
-            fused_feature += stacked_weight_map[:, i + 1, :, :] * resized_and_padded_feature_map_list[i]
-        return fused_feature
+        # Broadcasting element-wise multiplication
+        # TODO: could be wrong
+        fused_feature = stacked_weight_map[:, 0, :, :].unsqueeze(1) * full_image_feature # with shape (1, C, H, W)
+        for i in range(stacked_weight_map.shape[1] - 1):
+            fused_feature += stacked_weight_map[:, i + 1, :, :].unsqueeze(1) * resized_and_padded_feature_map_list[i]
+        return fused_feature # with shape (1, C, H, W)

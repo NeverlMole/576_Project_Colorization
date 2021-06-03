@@ -30,7 +30,11 @@ def get_model(file_name):
 
     # Load model state dict if exists
     if os.path.exists(model_path):
-        model.load_state_dict(torch.load(model_path))
+        if file_name[0] == 'F':
+            model.load_state_dict(torch.load(model_path), strict=False)
+            
+        else:
+            model.load_state_dict(torch.load(model_path))
         return model, True
     return model, False
 

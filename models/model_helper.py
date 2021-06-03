@@ -31,8 +31,17 @@ def get_model(file_name):
     # Load model state dict if exists
     if os.path.exists(model_path):
         if file_name[0] == 'F':
-            model.load_state_dict(torch.load(model_path), strict=False)
-            
+            full_image_state_dict = torch.load(full_image_model_path)
+            instance_state_dict = torch.load(instance_model_path)
+            # Load full-image network
+            model.load_state_dict(instance_state_dict, strict=False)
+            fusion_state_dict = model.state_dict()
+            # Load instance network
+            for name, param in instance_state_dict.items():
+                if isinstance(param, torch.nn.parameter.Parameter):
+                    # backwards compatibility for serialized parameters
+                    param = param.data
+                fusion_state_dict["instance_model." + name].copy_(param)
         else:
             model.load_state_dict(torch.load(model_path))
         return model, True

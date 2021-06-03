@@ -117,7 +117,7 @@ if __name__ == '__main__':
     if args.output_model != None:
         model_helper.save_model(model, args.output_model)
 
-    log_name = args.model + '_' + args.data
+    log_name = args.output_model + '_' + args.data
     log_path = '../log/'
     if not os.path.exists(log_path):
         os.makedirs(log_path)

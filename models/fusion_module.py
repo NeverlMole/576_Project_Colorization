@@ -152,11 +152,11 @@ class FusionModule(nn.Module):
         # TODO: Set instance model to evaluation mode 
         self.instance_model.eval()
 
-    def forward(self, input_A, instances, bboxes_collection):
+    def forward(self, input_list):
         '''
         Inputs:
             - input_A: grayscale full image, with shape (B, H, W) = (1, H, W)
-            - instances: with shape (N, H, W), where N is the number of instances in the full image 
+            - instances: with shape (N, H, W), where N is the number of instances in the full image
             - bboxes_collection: a dict of format
                 {
                     "32": box_info_32,
@@ -170,7 +170,12 @@ class FusionModule(nn.Module):
         Note:
             - Batch size should set to 1
         '''
-        # Extract features from instance images 
+        # Extract inputs
+        input_A = input_list[0][0]
+        instances = input_list[1][0]
+        bboxes_collection = {key: item[0] for key, item in input_list[2].items()}
+
+        # Extract features from instance images
         # instance_features_collection["key"] has shape (N, C', H', W')
         _, instance_features_collection = self.instance_model(instances)
 
@@ -191,7 +196,7 @@ class FusionModule(nn.Module):
         conv5 = self.model5(conv4)
         conv5 = self.fusion5(conv5, instance_features_collection["conv5"], bboxes_collection["32"])
         conv6 = self.model6(conv5)
-        conv6 = self.fusion1(conv6, instance_features_collection["conv6"], bboxes_collection["32"])
+        conv6 = self.fusion6(conv6, instance_features_collection["conv6"], bboxes_collection["32"])
         conv7 = self.model7(conv6)
         conv7 = self.fusion7(conv7, instance_features_collection["conv7"], bboxes_collection["32"])
 
@@ -214,7 +219,7 @@ class FusionModule(nn.Module):
 class PerLayerFusion(nn.Module):
     def __init__(self, in_channels):
         super(PerLayerFusion, self).__init__()
-        
+
         self.full_image_convs = nn.Sequential(
             nn.Conv2d(in_channels, 16, kernel_size=3, padding=1),
             nn.ReLU(True),
@@ -242,7 +247,7 @@ class PerLayerFusion(nn.Module):
             - instance_features: (N, C, H, W)
             - bboxes: (N, 6)
         '''
-        full_image_weight_map = self.full_image_conv(full_image_feature)
+        full_image_weight_map = self.full_image_convs(full_image_feature)
         # stacked_weight_map: (1, 1 + N, H, W)
         stacked_weight_map = full_image_weight_map.clone()
         resized_and_padded_feature_map_list = []
@@ -251,7 +256,7 @@ class PerLayerFusion(nn.Module):
             instance_weight_map = self.instance_convs(instance_feature)
             # bbox: [padding_left, padding_right, padding_top, padding_bottom, rh, rw]
             bbox = bboxes[i]
-            # Resize the instance_feature and the instance_weight_map to respect the bbox, which defines the size and location of the instance at the full_image_feature. 
+            # Resize the instance_feature and the instance_weight_map to respect the bbox, which defines the size and location of the instance at the full_image_feature.
             instance_feature = nn.functional.interpolate(instance_feature, size=(bbox[4], bbox[5]), mode='nearest')
             # Zero padding to the size of full_image_feature
             instance_feature = nn.functional.pad(instance_feature, (bbox[0], bbox[1], bbox[2], bbox[3]))

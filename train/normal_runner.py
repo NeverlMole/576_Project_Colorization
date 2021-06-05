@@ -14,7 +14,11 @@ def run(mode, dataloader, model, optimizer=None, print_every=10, batch_num=None)
 
     cnt = 0
     for inputs, targets in tqdm.tqdm(dataloader):
-        inputs = inputs.cuda()
+        if type(inputs) == list:
+            # Fusing model input
+            inputs = [inputs[0].cuda(), inputs[1].cuda(), inputs[2]]
+        else:
+            inputs = inputs.cuda()
         targets = targets.cuda()
 
         outputs = model(inputs)

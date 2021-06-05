@@ -90,7 +90,8 @@ if __name__ == '__main__':
     if args.train_mode == 'Normal':
         runner = normal_runner
     elif args.train_mode == 'Fusion':
-        runner = fusion_runner
+        runner = normal_runner
+
 
     # Training
     train_losses = []
@@ -114,8 +115,10 @@ if __name__ == '__main__':
         if args.output_model != None and args.save > 0 and (i + 1) % args.save == 0:
             model_helper.save_model(model, args.output_model + '_' + str(i))
 
-    if args.output_model != None:
-        model_helper.save_model(model, args.output_model)
+    if args.output_model == None:
+        exit()
+
+    model_helper.save_model(model, args.output_model)
 
     log_name = args.output_model + '_' + args.data
     log_path = '../log/'

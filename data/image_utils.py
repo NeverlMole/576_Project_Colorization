@@ -15,6 +15,7 @@ fine_size = 256
 l_cent = 50.
 l_norm = 100.
 ab_norm = 110.
+box_num = 8
 
 def img_transform(im):
     # img: PIL object type
@@ -42,6 +43,91 @@ def get_bbx(npz_path):
 
     return x1, y1, x2, y2
 
+def get_bbx_fusion(npz_path):
+    x = np.load(npz_path)
+    assert 'bbox' in x
+    assert 'scores' in x
+
+    # get all bbxs
+    box_list = x['bbox'].astype(np.int32)
+
+    # sort box by scores, and get (# - box_num) number of boxes.
+    # (#) is total number of detection boxes
+    if box_num > 0 and box_list.shape[0] > box_num:
+        scores = x['scores']
+        index_mask = np.argsort(scores, axis=0)[scores.shape[0] - box_num: scores.shape[0]]
+        box_list = box_list[index_mask]
+
+    #  return np array of detection boxes
+    return box_list
+
+def get_box_scales(box, ori_img_shape, scaled_size):
+    assert len(box) == 4
+    new_lt_x = int(box[0] / ori_img_shape[0] * scaled_size)
+    new_lt_y = int(box[1] / ori_img_shape[1] * scaled_size)
+    new_rb_x = int(box[2] / ori_img_shape[0] * scaled_size)
+    new_rb_y = int(box[3] / ori_img_shape[1] * scaled_size)
+    rw = new_rb_x - new_lt_x
+    rh = new_rb_y - new_lt_y
+    if rw < 1:
+        if scaled_size - new_rb_x > 1:
+            new_rb_x += 1
+        else:
+            new_lt_x -= 1
+        rw = 1
+    if rh < 1:
+        if scaled_size - new_rb_y > 1:
+            new_rb_y += 1
+        else:
+            new_lt_y -= 1
+        rh = 1
+    pad_left = new_lt_x
+    pad_right = scaled_size - new_rb_x
+    pad_top = new_lt_y
+    pad_bottom = scaled_size - new_rb_y
+    return [pad_left, pad_right, pad_top, pad_bottom, rh, rw]
+
+def out_fusion_train_data(img_path, bbx_path):
+    full_gray_list = []
+    bboxes_collection = {}
+    crop_gray_list = []
+
+    rgb_img, gray_img = get_gray_rgb_pil(img_path)
+    bbox_list = get_bbx_fusion(bbx_path)
+
+    bboxes_collection["32"] = np.zeros((len(bbox_list), 6))
+    bboxes_collection["64"] = np.zeros((len(bbox_list), 6))
+    bboxes_collection["128"] = np.zeros((len(bbox_list), 6))
+    bboxes_collection["256"] = np.zeros((len(bbox_list), 6))
+
+    for i in range(len(bbox_list)):
+        start_x, start_y, end_x, end_y = bbox_list[i]
+        bboxes_collection["256"][i] = np.array(get_box_scales(bbox_list[i], rgb_img.size, fine_size))
+        bboxes_collection["128"][i] = np.array(get_box_scales(bbox_list[i], rgb_img.size, fine_size//2))
+        bboxes_collection["64"][i] = np.array(get_box_scales(bbox_list[i], rgb_img.size, fine_size//4))
+        bboxes_collection["32"][i] = np.array(get_box_scales(bbox_list[i], rgb_img.size, fine_size//8))
+        crop_gray = gray_img.crop((start_x, start_y, end_x, end_y))
+        crop_gray = img_transform(crop_gray)
+        crop_lab_gray = get_lab_img(crop_gray)
+        crop_gray_list.append(crop_lab_gray['A'])
+
+    gray_img = img_transform(gray_img)
+    full_lab_gray = get_lab_img(gray_img)
+    full_gray_list.append(full_lab_gray['A'])
+
+    full_gray_out =  torch.stack(full_gray_list)
+    instance_gray_out = torch.stack(crop_gray_list)
+
+    bboxes_collection["256"] = torch.from_numpy(bboxes_collection["256"]).type(torch.long)
+    bboxes_collection["128"] = torch.from_numpy(bboxes_collection["128"]).type(torch.long)
+    bboxes_collection["64"] = torch.from_numpy(bboxes_collection["64"]).type(torch.long)
+    bboxes_collection["32"] = torch.from_numpy(bboxes_collection["32"]).type(torch.long)
+
+    rgb_img = img_transform(rgb_img)
+    rgb_lab_img = get_lab_img(rgb_img)
+
+    return [full_gray_out, instance_gray_out, bboxes_collection], rgb_lab_img['B']
+
 def out_instance_data(img_path, bbx_path):
     rgb_img, gray_img = get_gray_rgb_pil(img_path)
 
@@ -55,7 +141,6 @@ def out_instance_data(img_path, bbx_path):
 
     # return gray image with size H*W, and lab image with first two channel.
     return gray_lab_img['A'], rgb_lab_img['B']
-
 
 
 def out_full_data(img_path):

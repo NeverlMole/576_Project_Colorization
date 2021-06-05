@@ -53,5 +53,13 @@ def get_single_data_loader(data_name, batch_size=32):
         data_loader = torch.utils.data.DataLoader(data_dataset,
                                                    batch_size=batch_size)
 
+    if data_name[0] == 'F':
+        file_name = data_name[2:]
+        data_path = image_path + file_name
+        data_dataset = dataset.Train_fusion_img_dataset(img_dir=data_path)
+
+        data_loader = torch.utils.data.DataLoader(data_dataset,
+                                                   batch_size=batch_size)
+
     return data_loader
 

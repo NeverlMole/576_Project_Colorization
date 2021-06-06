@@ -10,6 +10,7 @@ print_every = 10
 
 def run(mode, dataloader, model, optimizer=None, print_every=10, batch_num=None):
     running_loss = []
+    cur_loss = []
     f_loss = nn.SmoothL1Loss(beta=1 / 110.)
 
     cnt = 0
@@ -24,10 +25,12 @@ def run(mode, dataloader, model, optimizer=None, print_every=10, batch_num=None)
         outputs = model(inputs)
         loss = f_loss(outputs,targets)
         running_loss.append(loss.item())
+        cur_loss.append(loss.item())
 
         cnt += 1
         if cnt % 10 == 0:
-            print(mode, "Loss:", loss.item())
+            print(mode, "Loss:", np.mean(cur_loss))
+            cur_loss = []
 
         if mode == "train":
             # zero the parameter gradients

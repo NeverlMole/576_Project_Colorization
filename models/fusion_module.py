@@ -139,7 +139,7 @@ class FusionModule(nn.Module):
 
         # classification output
         self.model_class = nn.Sequential(nn.Conv2d(256, 529, kernel_size=1))
-    
+
         self.model_out = nn.Sequential(
             nn.Conv2d(128, 2, kernel_size=1),
             nn.Tanh()
@@ -149,8 +149,35 @@ class FusionModule(nn.Module):
         self.softmax = nn.Sequential(nn.Softmax(dim=1))
 
         self.instance_model = instance_colorization.InstanceColorization()
-        # TODO: Set instance model to evaluation mode 
+        # TODO: Set instance model to evaluation mode
         self.instance_model.eval()
+
+        # Freeze instance part
+        for param in self.instance_model.parameters():
+            param.requires_grad = False
+
+        self.fusion_list = [self.fusion1,
+                            self.fusion2,
+                            self.fusion3,
+                            self.fusion4,
+                            self.fusion5,
+                            self.fusion6,
+                            self.fusion7,
+                            self.fusion8up,
+                            self.fusion8,
+                            self.fusion9up,
+                            self.fusion9,
+                            self.fusion10up,
+                            self.fusion10]
+
+    def set_no_fusion(self, no_fusion):
+        for layer in self.fusion_list:
+            layer.set_no_fusion(no_fusion)
+
+    def instance_outputs(self, input_list):
+        instances = input_list[1][0]
+        outputs, _ = self.instance_model(instances)
+        return outputs
 
     def forward(self, input_list):
         '''
@@ -240,6 +267,11 @@ class PerLayerFusion(nn.Module):
 
         self.softmax_norm = nn.Softmax(dim=1)
 
+        self.no_fusion = False
+
+    def set_no_fusion(self, no_fusion):
+        self.no_fusion = no_fusion
+
     def forward(self, full_image_feature, instance_features, bboxes):
         '''
         Inputs:
@@ -247,7 +279,11 @@ class PerLayerFusion(nn.Module):
             - instance_features: (N, C, H, W)
             - bboxes: (N, 6)
         '''
+        if self.no_fusion:
+            return full_image_feature
+
         full_image_weight_map = self.full_image_convs(full_image_feature)
+
         # stacked_weight_map: (1, 1 + N, H, W)
         stacked_weight_map = full_image_weight_map.clone()
         resized_and_padded_feature_map_list = []
@@ -264,7 +300,7 @@ class PerLayerFusion(nn.Module):
             instance_weight_map = nn.functional.pad(instance_weight_map, (bbox[0], bbox[1], bbox[2], bbox[3]), value=-100000)
             resized_and_padded_feature_map_list.append(instance_feature)
 
-            torch.cat((stacked_weight_map, instance_weight_map), dim=1)
+            stacked_weight_map = torch.cat((stacked_weight_map, instance_weight_map), dim=1)
             # After that, we stack all the weight maps, apply softmax on each pixel, and obtain the fused feature using a weighted sum
         stacked_weight_map = self.softmax_norm(stacked_weight_map)
         # Broadcasting element-wise multiplication

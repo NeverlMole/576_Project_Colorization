@@ -39,7 +39,7 @@ def get_data_loader(data_name, batch_size=32):
 def get_single_data_loader(data_name, batch_size=32):
     if data_name[0] == 'H':
         file_name = data_name[2:]
-        data_path = image_path + file_name + '/'
+        data_path = image_path + file_name
         data_dataset = dataset.Full_img_dataset(img_dir=data_path)
 
         data_loader = torch.utils.data.DataLoader(data_dataset,

@@ -49,6 +49,7 @@ if __name__ == '__main__':
 
     # Load Model
     model, _ = model_helper.get_model(args.model)
+    model = model.cuda()
 
     # Coloring picture
     img_path = img_path + args.model + '_' + args.output + '/'
@@ -60,20 +61,28 @@ if __name__ == '__main__':
     losses = []
     cnt = 0
     for inputs, targets in tqdm.tqdm(dataloader):
+        if type(inputs) == list:
+            inputs = [inputs[0].cuda(), inputs[1].cuda(), inputs[2]]
+        else:
+            inputs = inputs.cuda()
+        targets = targets.cuda()
         outputs = model(inputs)
         loss = f_loss(outputs, targets)
         losses.append(loss.item())
 
-        inputs = torch.unsqueeze(inputs[0], dim=0)
+        if type(inputs) == list:
+            inputs = inputs[0][0]
+        else:
+            inputs = torch.unsqueeze(inputs[0], dim=0)
         outputs = torch.cat((inputs, outputs[0]), dim=0)
         targets = torch.cat((inputs, targets[0]), dim=0)
         t1 = torch.zeros_like(inputs)
         t2 = torch.zeros_like(inputs)
         inputs = torch.cat((inputs, t1, t2), dim=0)
 
-        save_image_from_tensor(img_path + str(cnt) + '_i.jpg', inputs)
-        save_image_from_tensor(img_path + str(cnt) + '_o.jpg', outputs)
-        save_image_from_tensor(img_path + str(cnt) + '_t.jpg', targets)
+        save_image_from_tensor(img_path + str(cnt) + '_i.jpg', inputs.cpu())
+        save_image_from_tensor(img_path + str(cnt) + '_o.jpg', outputs.cpu())
+        save_image_from_tensor(img_path + str(cnt) + '_t.jpg', targets.cpu())
 
         cnt += 1
 

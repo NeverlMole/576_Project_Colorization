@@ -99,9 +99,13 @@ if __name__ == '__main__':
     learning_rate = args.learning_rate
     betas = (0.99, 0.999)
     for i in range(args.epoch):  # loop over the dataset multiple times
+        print('Epoch (%d/%d)' % (i + 1, args.epoch))
+
         optimizer = torch.optim.Adamax(model.parameters(),
                                        lr=learning_rate,
                                        betas=betas)
+        #num_p = sum([p.numel() for p in model.parameters()])
+        #print("Num parameters:", num_p)
 
         loss = runner.run('train', trainloader, model, optimizer)
 

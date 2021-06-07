@@ -74,6 +74,12 @@ if __name__ == '__main__':
         '--output-model',
         default=None,
         help='The name of the output model. None means no save.')
+    parser.add_argument(
+        '-n',
+        '--batch-num',
+        type=int,
+        help='The number of batches.'
+    )
 
     args = parser.parse_args()
 
@@ -107,7 +113,8 @@ if __name__ == '__main__':
         #num_p = sum([p.numel() for p in model.parameters()])
         #print("Num parameters:", num_p)
 
-        loss = runner.run('train', trainloader, model, optimizer)
+        loss = runner.run('train', trainloader, model, optimizer,
+                          batch_num=args.batch_num)
 
         train_losses.append(loss)
 
